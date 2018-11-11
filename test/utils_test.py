@@ -1,0 +1,67 @@
+"""utils_test.py"""
+
+import unittest
+import difflib
+
+from cbersgif.utils import search, lonlat_to_geojson, \
+    feat_to_bounds
+
+def diff_files(filename1, filename2):
+    """
+    Return string with context diff, empty if files are equal
+    """
+    with open(filename1) as file1:
+        with open(filename2) as file2:
+            diff = difflib.context_diff(file1.readlines(), file2.readlines())
+    res = ''
+    for line in diff:
+        res += line
+    return res
+
+class UtilsTest(unittest.TestCase):
+    """UtilsTest"""
+
+    def search_test(self):
+        """search_test"""
+
+        result = search('MUX', 100, 100)
+        self.assertTrue(len(result) >= 4)
+
+        result = search('AWFI', 100, 99)
+        self.assertTrue(len(result) >= 3)
+
+        result = search('PAN10M', 100, 100)
+        self.assertTrue(len(result) >= 2)
+
+        result = search('PAN5M', 100, 100)
+        self.assertTrue(len(result) >= 3)
+
+    def lonlat_to_geojson_test(self):
+        """lonlat_to_geojson_test"""
+
+        result = lonlat_to_geojson(-43.182365, -22.970722, 1000)
+        with open('test/copacabana.json', 'w') as fp_out:
+            fp_out.write(result)
+        res = diff_files('test/copacabana.json',
+                         'test/ref_copacabana.json')
+        self.assertEqual(len(res), 0, res)
+
+        result = lonlat_to_geojson(-43.182365, -22.970722, 10000)
+        with open('test/copacabana_10000.json', 'w') as fp_out:
+            fp_out.write(result)
+        res = diff_files('test/copacabana_10000.json',
+                         'test/ref_copacabana_10000.json')
+        self.assertEqual(len(res), 0, res)
+
+    def feat_to_bounds_test(self):
+        """feat_to_bounds_test"""
+
+        bounds = feat_to_bounds(lonlat_to_geojson(-43.182365,
+                                                  -22.970722, 10000))
+        self.assertEqual(bounds, (-4817038.8830492785,
+                                  -2638478.3425390865,
+                                  -4797038.883049279,
+                                  -2618478.3425390865))
+
+if __name__ == '__main__':
+    unittest.main()
