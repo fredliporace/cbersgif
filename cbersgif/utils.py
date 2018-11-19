@@ -5,6 +5,7 @@ cbersgif utils module
 
 from functools import partial
 import json
+import tempfile
 
 from aws_sat_api.search import cbers
 
@@ -12,6 +13,10 @@ import pyproj
 
 from shapely.ops import transform
 from shapely.geometry import mapping, shape, Point
+
+import numpy as np
+
+import imageio
 
 def search(sensor, path, row):
     '''
@@ -73,3 +78,51 @@ def feat_to_bounds(geom, crs='epsg:3857'):
     geom = transform(project, geom)
 
     return geom.bounds
+
+def linear_rescale(image, in_range, out_range):
+    '''
+    Linear rescaling
+
+    :param image: np array
+    :param in_range list: two items, begin and end input range
+    :param out_range list: two items, begin and end output range
+    '''
+
+    imin, imax = in_range
+    omin, omax = out_range
+    image = np.clip(image, imin, imax) - imin
+    image = image / float(imax - imin)
+
+    return image * (omax - omin) + omin
+
+def save_animated_gif(filename, pil_images, duration):
+    '''
+    Save PIL images passed in pil_images as an animated
+    GIF to filename
+
+    :param filename: output filename
+    :param pil_images list: PIL Images
+    :param duration float: duration for each frame in seconds
+    '''
+
+    # Currently requires saving each image as a temporary
+    # file. Check better way to convert from PIL to imageio
+    # format.
+    # It is also possible to use PIL to write the animated GIF
+    # directly, but the result was not good (dithering)? Check
+    # if this may be solved by a configuration parameter. This
+    # would remove the imageio dependency:
+    #    pil_images[0].save('test/pil_out.gif', save_all=True,
+    #                       append_images=pil_images[1:],
+    #                       duration=1000,
+    #                       loop=0, version='GIF89a',
+    #                       dither=None)
+
+    imageio_images = list()
+    for image in pil_images:
+        with tempfile.NamedTemporaryFile() as bmp_file:
+            image.save(bmp_file, "BMP")
+            #bmp_file.seek(0)
+            imageio_images.append(imageio.imread(bmp_file.name))
+    kargs = {'duration':duration}
+    imageio.mimsave(filename, imageio_images, **kargs)

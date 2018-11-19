@@ -2,9 +2,13 @@
 
 import unittest
 import difflib
+import contextlib
+import os
+
+from PIL import Image
 
 from cbersgif.utils import search, lonlat_to_geojson, \
-    feat_to_bounds
+    feat_to_bounds, save_animated_gif
 
 def diff_files(filename1, filename2):
     """
@@ -62,6 +66,25 @@ class UtilsTest(unittest.TestCase):
                                   -2638478.3425390865,
                                   -4797038.883049279,
                                   -2618478.3425390865))
+
+    def save_animated_gif_test(self):
+        """save_animated_gif_test"""
+
+        output_filename = 'test/animated.gif'
+
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(output_filename)
+
+        pil_images = []
+        for index in range(4):
+            pil_img = Image.open('test/{}.bmp'.format(index))
+            pil_images.append(pil_img)
+
+        save_animated_gif(output_filename, pil_images, 0.5)
+
+        # Only checks if file is generated, not sure if a binary
+        # diff would work on distinct machines/lib versions
+        self.assertTrue(os.path.exists(output_filename))
 
 if __name__ == '__main__':
     unittest.main()
