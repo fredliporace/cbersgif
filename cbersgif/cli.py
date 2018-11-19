@@ -75,9 +75,12 @@ FONT = ImageFont.load_default()
               help='Save intermediary files as bmp')
 @click.option('--max_images', type=int, default=100,
               help='Maximum number of images to be used')
+@click.option('--singleenhancement/--nosingleenhancement', default=False,
+              help='If True the same contrast stretch is performed for '
+              'all scenes, this stretch is computed for the first scene')
 def main(lat, lon, path, row, sensor, level,
          start_date, end_date, buffer_size, res, bands,
-         output, saveintermediary, max_images):
+         output, saveintermediary, max_images, singleenhancement):
     """ Create animated GIF from CBERS 4 data"""
 
     rgb = bands.split(',')
@@ -110,6 +113,9 @@ def main(lat, lon, path, row, sensor, level,
 
         out = np.zeros((3, height, width), dtype=np.uint8)
 
+        p02 = None
+        p98 = None
+
         for band_no, band in enumerate(rgb):
             # Reference
             # https://s3.amazonaws.com/cbers-pds-migration/CBERS4/MUX/
@@ -132,7 +138,9 @@ def main(lat, lon, path, row, sensor, level,
                                       out_shape=(height, width), indexes=1,
                                       resampling=Resampling.bilinear)
 
-                    p02, p98 = np.percentile(matrix[matrix > 0], (2, 98))
+                    if (not p02 and not p98) or not singleenhancement:
+                        p02, p98 = np.percentile(matrix[matrix > 0], (2, 98))
+
                     matrix = np.where(matrix > 0,
                                       utils.linear_rescale(matrix,
                                                            in_range=[int(p02),
