@@ -40,6 +40,15 @@ class UtilsTest(unittest.TestCase):
         result = search('PAN5M', 100, 100)
         self.assertTrue(len(result) >= 3)
 
+    def search_test_wit_level(self):
+        """search_test_with_level"""
+
+        result = search('MUX', 100, 100, 'L4')
+        self.assertTrue(len(result) >= 0)
+
+        result = search('MUX', 100, 100, 'L2')
+        self.assertTrue(len(result) >= 4)
+
     def lonlat_to_geojson_test(self):
         """lonlat_to_geojson_test"""
 

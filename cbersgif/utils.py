@@ -18,17 +18,23 @@ import numpy as np
 
 import imageio
 
-def search(sensor, path, row):
+def search(sensor, path, row, level=None):
     '''
     Returns available images for sensor, path, row
 
-    :param str sensor: Sensor ID, in ('MUX','AWFI','PAN5M','PAN10M')
-    :param int path: Path number
-    :param int row: Row number
+    :param sensor str: Sensor ID, in ('MUX','AWFI','PAN5M','PAN10M')
+    :param path int: Path number
+    :param row int: Row number
+    :param level str: Levels to be used, for instance, 'L2' or 'L4'.
     :return: Scenes
     :rtype: list
     '''
-    return cbers(path, row, sensor)
+
+    matches = cbers(path, row, sensor)
+    if level:
+        matches[:] = [value for value in matches if \
+                      value['processing_level'] == level]
+    return matches
 
 def lonlat_to_geojson(lon, lat, buff_size=None):
     '''
