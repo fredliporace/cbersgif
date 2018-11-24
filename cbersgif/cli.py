@@ -23,7 +23,7 @@ from rasterio.vrt import WarpedVRT
 
 import numpy as np
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
 from cbersgif import utils
 
@@ -78,13 +78,27 @@ FONT = ImageFont.load_default()
 @click.option('--singleenhancement/--nosingleenhancement', default=False,
               help='If True the same contrast stretch is performed for '
               'all scenes, this stretch is computed for the first scene')
+@click.option('--enhancement/--noenhancement', default=False,
+              help='If True contrast stretch is computed for scenes')
+@click.option('--percentiles', type=str, default='2,98',
+              help='Percentiles for upper and lower contrast enhancement')
+@click.option('--contrast_factor', type=float, default=1.0,
+              help='Contrast enhancement factor')
+@click.option('--duration', type=float, default=0.5,
+              help='Duration of each frame, in seconds')
 def main(lat, lon, path, row, sensor, level,
          start_date, end_date, buffer_size, res, bands,
-         output, saveintermediary, max_images, singleenhancement):
+         output, saveintermediary, max_images, singleenhancement,
+         enhancement, percentiles, contrast_factor, duration):
     """ Create animated GIF from CBERS 4 data"""
 
     rgb = bands.split(',')
     assert len(rgb) == 3, "Exactly 3 bands must be defined"
+
+    percents = percentiles.split(',')
+    assert len(percents) == 2, 'Two percentiles must be defined'
+    p_min = int(percents[0])
+    p_max = int(percents[1])
 
     scenes = utils.search(sensor, path, row,
                           None if level == 'all' else level)
@@ -101,6 +115,9 @@ def main(lat, lon, path, row, sensor, level,
 
     images = []
 
+    p_min_value = [None] * 3
+    p_max_value = [None] * 3
+
     for scene_no, scene in enumerate(scenes):
 
         if scene_no >= max_images:
@@ -112,9 +129,6 @@ def main(lat, lon, path, row, sensor, level,
         print(s3_key)
 
         out = np.zeros((3, height, width), dtype=np.uint8)
-
-        p02 = None
-        p98 = None
 
         for band_no, band in enumerate(rgb):
             # Reference
@@ -134,35 +148,55 @@ def main(lat, lon, path, row, sensor, level,
                     window = vrt.window(*aoi_bounds)
                     # @todo need to define
                     # export AWS_REQUEST_PAYER="requester"
+                    # reference: https://github.com/mapbox/rio-tiler/issues/52
                     matrix = vrt.read(window=window,
                                       out_shape=(height, width), indexes=1,
                                       resampling=Resampling.bilinear)
 
-                    if (not p02 and not p98) or not singleenhancement:
-                        p02, p98 = np.percentile(matrix[matrix > 0], (2, 98))
+                    if (scene_no == 0 or not singleenhancement) and enhancement:
+                        p_min_value[band_no], \
+                            p_max_value[band_no] = np.\
+                                                   percentile(matrix[matrix > 0],
+                                                              (p_min, p_max))
+                        print('{}, {}-{}, {}-{}'.format(band_no,
+                                                        p_min,
+                                                        p_max,
+                                                        p_min_value,
+                                                        p_max_value))
 
-                    matrix = np.where(matrix > 0,
-                                      utils.linear_rescale(matrix,
-                                                           in_range=[int(p02),
-                                                                     int(p98)],
-                                                           out_range=[1, 255]),
-                                      0)
+                    if enhancement:
+                        matrix = np.where(matrix > 0,
+                                          utils.\
+                                          linear_rescale(matrix,
+                                                         in_range=\
+                                                         [int(p_min_value[band_no]),
+                                                          int(p_max_value[band_no])],
+                                                         out_range=[1, 255]),
+                                          0)
 
                     out[band_no] = matrix.astype(np.uint8)
 
         img = Image.fromarray(np.dstack(out))
-        draw = ImageDraw.Draw(img)
-        xst, yst = draw.textsize(scene['acquisition_date'], font=FONT)
-        draw.rectangle([(5, 5), (xst+15, yst+15)],
-                       fill=(255, 255, 255))
-        draw.text((10, 10), scene['acquisition_date'],
-                  (0, 0, 0), font=FONT)
+
         if saveintermediary:
             img.save('{}.bmp'.format(scene_no))
-        images.append(img)
+
+        contrast = ImageEnhance.Contrast(img)
+        enh_image = contrast.enhance(contrast_factor)
+
+        text_value = '%d, %s' % (scene_no,
+                                 scene['acquisition_date'])
+        draw = ImageDraw.Draw(enh_image)
+        xst, yst = draw.textsize(text_value, font=FONT)
+        draw.rectangle([(5, 5), (xst+15, yst+15)],
+                       fill=(255, 255, 255))
+        draw.text((10, 10), text_value,
+                  (0, 0, 0), font=FONT)
+
+        images.append(enh_image)
 
     if images:
-        utils.save_animated_gif(output, images, duration=0.5)
+        utils.save_animated_gif(output, images, duration=duration)
 
 if __name__ == '__main__':
     main()
