@@ -8,7 +8,7 @@ import os
 from PIL import Image
 
 from cbersgif.utils import search, lonlat_to_geojson, \
-    feat_to_bounds, save_animated_gif
+    feat_to_bounds, save_animated_gif, frame_hash
 
 def diff_files(filename1, filename2):
     """
@@ -94,6 +94,31 @@ class UtilsTest(unittest.TestCase):
         # Only checks if file is generated, not sure if a binary
         # diff would work on distinct machines/lib versions
         self.assertTrue(os.path.exists(output_filename))
+
+    def frame_hash(self):
+        """frame_hash_test"""
+
+        example = {
+            's3_key': 'CBERS4/MUX/167/114/CBERS_4_MUX_20180911_167_114_L4',
+            'bands': '7,6,5'
+        }
+        hash_result_1 = frame_hash(example)
+        example = {
+            'bands': '7,6,5',
+            's3_key': 'CBERS4/MUX/167/114/CBERS_4_MUX_20180911_167_114_L4'
+        }
+        hash_result_2 = frame_hash(example)
+        example = {
+            'bands': '7,6,4',
+            's3_key': 'CBERS4/MUX/167/114/CBERS_4_MUX_20180911_167_114_L4'
+        }
+        hash_result_3 = frame_hash(example)
+        # Should not depend on dict order
+        self.assertEqual(hash_result_1, hash_result_2)
+        # Distinct hashes for distinct contents
+        self.assertNotEqual(hash_result_1, hash_result_3)
+        # Absolute hash value should always be the same
+        self.assertEqual(hash_result_1, 'bbee5d39ea2defeb39a2075e9c3875a4')
 
 if __name__ == '__main__':
     unittest.main()

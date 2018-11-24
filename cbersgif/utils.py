@@ -6,6 +6,9 @@ cbersgif utils module
 from functools import partial
 import json
 import tempfile
+import hashlib
+import pickle
+import os
 
 from aws_sat_api.search import cbers
 
@@ -17,6 +20,12 @@ from shapely.geometry import mapping, shape, Point
 import numpy as np
 
 import imageio
+
+import rasterio as rio
+from rasterio.enums import Resampling
+from rasterio.vrt import WarpedVRT
+
+CACHE_DIR = '/tmp/cbersgifcache/'
 
 def search(sensor, path, row, level=None):
     '''
@@ -101,12 +110,23 @@ def linear_rescale(image, in_range, out_range):
 
     return image * (omax - omin) + omin
 
+def frame_hash(input_dict):
+    '''
+    Builds a hash for given dictionary
+
+    :param input_dict dict: Input for hash function, all items are considered
+    :return: computed hash
+    '''
+
+    serial = pickle.dumps(sorted(input_dict.items()))
+    return hashlib.md5(serial).hexdigest()
+
 def save_animated_gif(filename, pil_images, duration):
     '''
     Save PIL images passed in pil_images as an animated
     GIF to filename
 
-    :param filename: output filename
+    :param filename str: output filename
     :param pil_images list: PIL Images
     :param duration float: duration for each frame in seconds
     '''
@@ -132,3 +152,61 @@ def save_animated_gif(filename, pil_images, duration):
             imageio_images.append(imageio.imread(bmp_file.name))
     kargs = {'duration':duration}
     imageio.mimsave(filename, imageio_images, **kargs)
+
+def get_frame_matrix(s3_key, band, scene, aoi_bounds, width, height,
+                     cache=True):
+    '''
+    Build a image frame
+
+    :param s3_key str: S3 prefix for scene, up to directory
+    :param band list: band number
+    :param scene dict: scene data as returned from CBERS search
+    :param aoi_bounds list: (minx, miny, maxx, maxy)
+    :param width int: image output width in pixels
+    :param height int: image output height in pixels
+    :param cache bool: if True the image cache is used
+    '''
+
+    hash_dict = {
+        's3_key':s3_key,
+        'band':band,
+        'scene':scene,
+        'aoi_bounds':aoi_bounds,
+        'width':width,
+        'height':height,
+    }
+    hash_hex = frame_hash(hash_dict)
+    hash_file = CACHE_DIR + hash_hex + '.npy'
+
+    if cache:
+        if os.path.isfile(hash_file):
+            print('Cache hit for {}, band {}'.format(scene['scene_id'], band))
+            return np.load(hash_file)
+
+    # Reference
+    # https://s3.amazonaws.com/cbers-pds-migration/CBERS4/MUX/
+    # 063/095/CBERS_4_MUX_20180911_063_095_L2/
+    # CBERS_4_MUX_20180911_063_095_L2_BAND5.tif
+    band_address = '{s3_key}/{scene}_BAND{band}.tif'.\
+                   format(s3_key=s3_key,
+                          scene=scene['scene_id'],
+                          band=band)
+    with rio.open(band_address) as src:
+        with WarpedVRT(src,
+                       crs='EPSG:3857',
+                       resampling=Resampling.bilinear) as vrt:
+
+            window = vrt.window(*aoi_bounds)
+            # @todo need to define
+            # export AWS_REQUEST_PAYER="requester"
+            # reference: https://github.com/mapbox/rio-tiler/issues/52
+            matrix = vrt.read(window=window,
+                              out_shape=(height, width), indexes=1,
+                              resampling=Resampling.bilinear)
+
+    if cache:
+        if not os.path.exists(CACHE_DIR):
+            os.makedirs(CACHE_DIR)
+        np.save(hash_file, matrix)
+
+    return matrix

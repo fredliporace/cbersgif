@@ -17,7 +17,6 @@ import click
 #from rasterio import transform
 
 import rasterio as rio
-
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 
@@ -84,12 +83,19 @@ FONT = ImageFont.load_default()
               help='Percentiles for upper and lower contrast enhancement')
 @click.option('--contrast_factor', type=float, default=1.0,
               help='Contrast enhancement factor')
+@click.option('--brightness_factor', type=float, default=1.0,
+              help='Brightness enhancement factor')
 @click.option('--duration', type=float, default=0.5,
               help='Duration of each frame, in seconds')
+@click.option('--taboo_index', type=str, default=None,
+              help='List of comma separated integers with image indices that '
+              'will not be included in the timelapse')
 def main(lat, lon, path, row, sensor, level,
          start_date, end_date, buffer_size, res, bands,
          output, saveintermediary, max_images, singleenhancement,
-         enhancement, percentiles, contrast_factor, duration):
+         enhancement, percentiles, contrast_factor, brightness_factor,
+         duration,
+         taboo_index):
     """ Create animated GIF from CBERS 4 data"""
 
     rgb = bands.split(',')
@@ -99,6 +105,11 @@ def main(lat, lon, path, row, sensor, level,
     assert len(percents) == 2, 'Two percentiles must be defined'
     p_min = int(percents[0])
     p_max = int(percents[1])
+
+    taboo_list = list()
+    if taboo_index:
+        for item in taboo_index.split(','):
+            taboo_list.append(int(item))
 
     scenes = utils.search(sensor, path, row,
                           None if level == 'all' else level)
@@ -120,6 +131,10 @@ def main(lat, lon, path, row, sensor, level,
 
     for scene_no, scene in enumerate(scenes):
 
+        if scene_no in taboo_list:
+            print('Skipping scene {}'.format(scene_no))
+            continue
+
         if scene_no >= max_images:
             break
 
@@ -131,50 +146,32 @@ def main(lat, lon, path, row, sensor, level,
         out = np.zeros((3, height, width), dtype=np.uint8)
 
         for band_no, band in enumerate(rgb):
-            # Reference
-            # https://s3.amazonaws.com/cbers-pds-migration/CBERS4/MUX/
-            # 063/095/CBERS_4_MUX_20180911_063_095_L2/
-            # CBERS_4_MUX_20180911_063_095_L2_BAND5.tif
-            band_address = '{s3_key}/{scene}_BAND{band}.tif'.\
-                           format(s3_key=s3_key,
-                                  scene=scene['scene_id'],
-                                  band=band)
-            #print(band_address)
-            with rio.open(band_address) as src:
-                with WarpedVRT(src,
-                               crs='EPSG:3857',
-                               resampling=Resampling.bilinear) as vrt:
 
-                    window = vrt.window(*aoi_bounds)
-                    # @todo need to define
-                    # export AWS_REQUEST_PAYER="requester"
-                    # reference: https://github.com/mapbox/rio-tiler/issues/52
-                    matrix = vrt.read(window=window,
-                                      out_shape=(height, width), indexes=1,
-                                      resampling=Resampling.bilinear)
+            matrix = utils.get_frame_matrix(s3_key, band, scene, aoi_bounds,
+                                            width, height)
 
-                    if (scene_no == 0 or not singleenhancement) and enhancement:
-                        p_min_value[band_no], \
-                            p_max_value[band_no] = np.\
-                                                   percentile(matrix[matrix > 0],
-                                                              (p_min, p_max))
-                        print('{}, {}-{}, {}-{}'.format(band_no,
-                                                        p_min,
-                                                        p_max,
-                                                        p_min_value,
-                                                        p_max_value))
+            if (scene_no == 0 or not singleenhancement) and enhancement:
+                p_min_value[band_no], \
+                    p_max_value[band_no] = np.\
+                                           percentile(matrix[matrix > 0],
+                                                      (p_min, p_max))
+                print('{}, {}-{}, {}-{}'.format(band_no,
+                                                p_min,
+                                                p_max,
+                                                p_min_value,
+                                                p_max_value))
 
-                    if enhancement:
-                        matrix = np.where(matrix > 0,
-                                          utils.\
-                                          linear_rescale(matrix,
-                                                         in_range=\
-                                                         [int(p_min_value[band_no]),
-                                                          int(p_max_value[band_no])],
-                                                         out_range=[1, 255]),
-                                          0)
+            if enhancement:
+                matrix = np.where(matrix > 0,
+                                  utils.\
+                                  linear_rescale(matrix,
+                                                 in_range=\
+                                                 [int(p_min_value[band_no]),
+                                                  int(p_max_value[band_no])],
+                                                 out_range=[1, 255]),
+                                  0)
 
-                    out[band_no] = matrix.astype(np.uint8)
+            out[band_no] = matrix.astype(np.uint8)
 
         img = Image.fromarray(np.dstack(out))
 
@@ -183,6 +180,7 @@ def main(lat, lon, path, row, sensor, level,
 
         contrast = ImageEnhance.Contrast(img)
         enh_image = contrast.enhance(contrast_factor)
+        enh_image = ImageEnhance.Contrast(enh_image).enhance(brightness_factor)
 
         text_value = '%d, %s' % (scene_no,
                                  scene['acquisition_date'])
