@@ -78,9 +78,9 @@ FONT = ImageFont.load_default()
               help='If True the same contrast stretch is performed for '
               'all scenes, this stretch is computed for the first scene')
 @click.option('--enhancement/--noenhancement', default=False,
-              help='If True contrast stretch is computed for scenes')
+              help='If True histogram stretch is computed for scenes')
 @click.option('--percentiles', type=str, default='2,98',
-              help='Percentiles for upper and lower contrast enhancement')
+              help='Percentiles for upper and lower histogram enhancement')
 @click.option('--contrast_factor', type=float, default=1.0,
               help='Contrast enhancement factor')
 @click.option('--brightness_factor', type=float, default=1.0,

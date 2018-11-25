@@ -27,7 +27,7 @@ from rasterio.vrt import WarpedVRT
 
 CACHE_DIR = '/tmp/cbersgifcache/'
 
-def search(sensor, path, row, level=None, 
+def search(sensor, path, row, level=None,
            start_date='1900-01-01', end_date='9999-12-31'):
     '''
     Returns available images for sensor, path, row
