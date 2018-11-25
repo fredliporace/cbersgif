@@ -40,7 +40,7 @@ class UtilsTest(unittest.TestCase):
         result = search('PAN5M', 100, 100)
         self.assertTrue(len(result) >= 3)
 
-    def search_test_wit_level(self):
+    def search_test_with_level(self):
         """search_test_with_level"""
 
         result = search('MUX', 100, 100, 'L4')
@@ -48,6 +48,18 @@ class UtilsTest(unittest.TestCase):
 
         result = search('MUX', 100, 100, 'L2')
         self.assertTrue(len(result) >= 4)
+
+    def search_test_with_date(self):
+        """search_test_with_date"""
+
+        result = search('MUX', 100, 100)
+        self.assertTrue(len(result) >= 4)
+        result = search('MUX', 100, 100,
+                        start_date='2015-11-01',
+                        end_date='2018-09-29')
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0]['acquisition_date'], '20180306')
+        self.assertEqual(result[1]['acquisition_date'], '20180427')
 
     def lonlat_to_geojson_test(self):
         """lonlat_to_geojson_test"""

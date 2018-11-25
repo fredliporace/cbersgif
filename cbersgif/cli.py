@@ -111,8 +111,10 @@ def main(lat, lon, path, row, sensor, level,
         for item in taboo_index.split(','):
             taboo_list.append(int(item))
 
-    scenes = utils.search(sensor, path, row,
-                          None if level == 'all' else level)
+    scenes = utils.search(sensor=sensor, path=path, row=row,
+                          level=None if level == 'all' else level,
+                          start_date=start_date,
+                          end_date=end_date)
     click.echo('{} scenes found'.format(len(scenes)))
 
     # Output transform

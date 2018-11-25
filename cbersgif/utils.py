@@ -27,7 +27,8 @@ from rasterio.vrt import WarpedVRT
 
 CACHE_DIR = '/tmp/cbersgifcache/'
 
-def search(sensor, path, row, level=None):
+def search(sensor, path, row, level=None, 
+           start_date='1900-01-01', end_date='9999-12-31'):
     '''
     Returns available images for sensor, path, row
 
@@ -35,14 +36,24 @@ def search(sensor, path, row, level=None):
     :param path int: Path number
     :param row int: Row number
     :param level str: Levels to be used, for instance, 'L2' or 'L4'.
+    :param start_date str: Start date in YYYY-MM-DD format
+    :param end_date str: End date in YYYY-MM-DD format
     :return: Scenes
     :rtype: list
     '''
 
     matches = cbers(path, row, sensor)
+
+    s_date = start_date.replace('-', '')
+    e_date = end_date.replace('-', '')
+    matches[:] = [value for value in matches if \
+                  value['acquisition_date'] >= s_date and
+                  value['acquisition_date'] <= e_date]
+
     if level:
         matches[:] = [value for value in matches if \
                       value['processing_level'] == level]
+
     return matches
 
 def lonlat_to_geojson(lon, lat, buff_size=None):
