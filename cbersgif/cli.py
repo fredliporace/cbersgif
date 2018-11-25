@@ -14,19 +14,11 @@ import uuid
 
 import click
 
-#from rasterio import transform
-
-import rasterio as rio
-from rasterio.enums import Resampling
-from rasterio.vrt import WarpedVRT
-
 import numpy as np
 
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
 from cbersgif import utils
-
-#from matplotlib import cm
 
 from cbersgif import __version__ as cbersgif_version
 
