@@ -31,5 +31,5 @@ AWS access credentials must be available. Note that charges apply to data access
 Requires setting the AWS_REQUESTER_PAYER env var to be set:
 
 ```
-AWS_REQUEST_PAYER="requester"
+AWS_REQUEST_PAYER=requester
 ```
