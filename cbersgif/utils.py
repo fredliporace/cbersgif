@@ -209,7 +209,7 @@ def get_frame_matrix(s3_key, band, scene, aoi_bounds, width, height,
 
             window = vrt.window(*aoi_bounds)
             # @todo need to define
-            # export AWS_REQUEST_PAYER="requester"
+            # export AWS_REQUEST_PAYER=requester
             # reference: https://github.com/mapbox/rio-tiler/issues/52
             matrix = vrt.read(window=window,
                               out_shape=(height, width), indexes=1,
