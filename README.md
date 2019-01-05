@@ -6,7 +6,7 @@ WIP project, check [landsatgif](https://github.com/vincentsarago/landsatgif) and
 
 ## Example
 
-Usage example:
+Usage examples:
 
 ```
 ./cbersgif/cli.py --lat -12.8379 --lon -56.01551 --path 167 --row 114 --sensor MUX --max_images 50 --enhancement --buffer_size=20000 --res=80 --duration=0.5 --taboo_index=3,4,5,6,9,11,20,22,26
@@ -15,6 +15,14 @@ Usage example:
 Results in:
 
 ![](img_samples/1426060a-f0a8-11e8-b241-080027243b40.gif)
+
+```
+./cbersgif/cli.py --lat -7.425944444444445 --lon -45.03827777777778 --path 157 --row 108 --sensor MUX --max_images 50 --buffer_size=4000 --res=20 --duration=0.5 --enhancement --start_date='2017-01-01' --taboo_index=9
+```
+
+Results in:
+
+![](img_samples/4af2d2c4-f190-11e8-af39-080027243b40.gif)
 
 ## Installation
 
