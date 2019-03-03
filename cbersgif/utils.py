@@ -9,6 +9,7 @@ import tempfile
 import hashlib
 import pickle
 import os
+import re
 
 from aws_sat_api.search import cbers
 
@@ -25,13 +26,45 @@ import rasterio as rio
 from rasterio.enums import Resampling
 from rasterio.vrt import WarpedVRT
 
+from cbersgif.search import StacSearch
+
 CACHE_DIR = '/tmp/cbersgifcache/'
 
-def search(sensor, path, row, level=None,
-           start_date='1900-01-01', end_date='9999-12-31'):
-    '''
-    Returns available images for sensor, path, row
+def stac_to_aws_sat_api(stac_id: str):
+    """
+    Build awd_sat_api scene from stac_id
 
+    :param stac_id str: stac item id
+    :rtype: dict
+    :return: aws_sat_api scene id, required keys: key, acquisition_date,
+             scene_id             
+
+    """
+
+    match = re.match(r'CBERS_(?P<sat>\d)_(?P<cam>\w+)_(?P<date>\d+)_'
+                     r'(?P<path>\d{3})_(?P<row>\d{3})_L(?P<level>\d{1})',
+                     stac_id)
+    assert match, "Can't match {}".format(stac_id)
+    scene = dict()
+    scene['key'] = 'CBERS{sat}/{sensor}/{path}/{row}/CBERS_{sat}_{sensor}_'\
+                   '{date}_{path}_{row}_'\
+                   'L{level}'.format(sat=match.group('sat'),
+                                     sensor=match.group('cam'),
+                                     path=match.group('path'),
+                                     row=match.group('row'),
+                                     level=match.group('level'),
+                                     date=match.group('date'))
+    scene['acquisition_date'] = match.group('date')
+    scene['scene_id'] = stac_id
+    return scene
+
+def search(**kwargs):
+    '''
+    Returns available images for:
+       sensor, level, start_date, end_date for both modes.
+       path, row for 'aws_sat_api' mode.
+       lat, lon for 'stac' mode. stac_endpoint is mandatory for this mode
+    :param mode str: 'aws_sat_api' or 'stac'
     :param sensor str: Sensor ID, in ('MUX','AWFI','PAN5M','PAN10M')
     :param path int: Path number
     :param row int: Row number
@@ -42,17 +75,46 @@ def search(sensor, path, row, level=None,
     :rtype: list
     '''
 
-    matches = cbers(path, row, sensor)
+    mode = 'aws_sat_api' if not kwargs.get('mode') else kwargs['mode']
 
-    s_date = start_date.replace('-', '')
-    e_date = end_date.replace('-', '')
-    matches[:] = [value for value in matches if \
-                  value['acquisition_date'] >= s_date and
-                  value['acquisition_date'] <= e_date]
+    assert mode in ('aws_sat_api', 'stac'), \
+        "Invalid search mode: {}".format(mode)
 
-    if level:
+    start_date = '1900-01-01' if not kwargs.get('start_date') \
+                 else kwargs['start_date']
+    end_date = '9999-12-31' if not kwargs.get('end_date') \
+               else kwargs['end_date']
+    level = kwargs.get('level')
+
+    if mode == 'aws_sat_api':
+
+        matches = cbers(kwargs['path'], kwargs['row'], kwargs['sensor'])
+
+        s_date = start_date.replace('-', '')
+        e_date = end_date.replace('-', '')
         matches[:] = [value for value in matches if \
-                      value['processing_level'] == level]
+                      value['acquisition_date'] >= s_date and
+                      value['acquisition_date'] <= e_date]
+
+        if level:
+            matches[:] = [value for value in matches if \
+                          value['processing_level'] == level]
+
+    else:
+
+        ss1 = StacSearch(kwargs['stac_endpoint'])
+        bbox = [kwargs['lon'], kwargs['lat'],
+                kwargs['lon'], kwargs['lat']]
+        ids = ss1.search(instrument=kwargs['sensor'],
+                         start_date=start_date,
+                         end_date=end_date,
+                         level=level,
+                         bbox=bbox,
+                         limit=300)
+        matches = list()
+        for sid in ids:
+            matches.append(stac_to_aws_sat_api(stac_id=sid['id']))
+        matches = sorted(matches, key=lambda k: k['acquisition_date'])
 
     return matches
 
