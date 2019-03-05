@@ -7,8 +7,12 @@ import os
 
 from PIL import Image
 
+STAC_ENDPOINT = 'https://4jp7f1hqlj.execute-api.us-east-1.amazonaws.com/'\
+                'prod/stac/search'
+
 from cbersgif.utils import search, lonlat_to_geojson, \
-    feat_to_bounds, save_animated_gif, frame_hash
+    feat_to_bounds, save_animated_gif, frame_hash, \
+    stac_to_aws_sat_api
 
 def diff_files(filename1, filename2):
     """
@@ -25,41 +29,66 @@ def diff_files(filename1, filename2):
 class UtilsTest(unittest.TestCase):
     """UtilsTest"""
 
+    def stac_to_aws_sat_api_test(self):
+        """stac_to_aws_sat_api_test"""
+
+        scene = stac_to_aws_sat_api(stac_id='CBERS_4_PAN5M_20181231_'
+                                    '156_107_L2')
+        self.assertEqual(scene['key'],
+                         'CBERS4/PAN5M/156/107/CBERS_4_PAN5M_20181231_'
+                         '156_107_L2')
+        self.assertEqual(scene['acquisition_date'], '20181231')
+
     def search_test(self):
         """search_test"""
 
-        result = search('MUX', 100, 100)
+        result = search(sensor='MUX', path=100, row=100)
         self.assertTrue(len(result) >= 4)
 
-        result = search('AWFI', 100, 99)
+        result = search(sensor='AWFI', path=100, row=99)
         self.assertTrue(len(result) >= 3)
 
-        result = search('PAN10M', 100, 100)
+        result = search(sensor='PAN10M', path=100, row=100)
         self.assertTrue(len(result) >= 2)
 
-        result = search('PAN5M', 100, 100)
+        result = search(sensor='PAN5M', path=100, row=100)
         self.assertTrue(len(result) >= 3)
 
-    def search_test_with_level(self):
-        """search_test_with_level"""
+    def search_with_level_test(self):
+        """search_with_level_test"""
 
-        result = search('MUX', 100, 100, 'L4')
+        result = search(sensor='MUX', path=100, row=100, level='L4')
         self.assertTrue(len(result) >= 0)
 
-        result = search('MUX', 100, 100, 'L2')
+        result = search(sensor='MUX', path=100, row=100, level='L2')
         self.assertTrue(len(result) >= 4)
 
-    def search_test_with_date(self):
+    def search_stac_mode_test(self):
+        """search_stac_mode_test"""
+
+        rio_lon = -43.1729
+        rio_lat = -22.9068
+        result = search(sensor='MUX',
+                        lon=rio_lon, lat=rio_lat,
+                        mode='stac', stac_endpoint=STAC_ENDPOINT,
+                        level='L2')
+        self.assertTrue(len(result) >= 4)
+        self.assertEqual(result[0]['key'],
+                         'CBERS4/MUX/151/126/CBERS_4_MUX_20150215_151_126_L2')
+        self.assertEqual(result[0]['acquisition_date'], '20150215')
+
+    def search_stac_mode(self):
         """search_test_with_date"""
 
-        result = search('MUX', 100, 100)
+        result = search(sensor='MUX', path=100, row=100)
         self.assertTrue(len(result) >= 4)
-        result = search('MUX', 100, 100,
+        result = search(sensor='MUX', path=100, row=100,
                         start_date='2015-11-01',
                         end_date='2018-09-29')
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0]['acquisition_date'], '20180306')
         self.assertEqual(result[1]['acquisition_date'], '20180427')
+
 
     def lonlat_to_geojson_test(self):
         """lonlat_to_geojson_test"""

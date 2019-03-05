@@ -37,10 +37,6 @@ FONT = ImageFont.load_default()
               help='Latitude of the query, between 90 and -90.')
 @click.option('--lon', type=float, required=True,
               help='Longitude of the query, between 180 and -180.')
-@click.option('--path', type=int, required=True,
-              help='CBERS 4 path')
-@click.option('--row', type=int, required=True,
-              help='CBERS 4 row')
 @click.option('--sensor', type=click.Choice(['MUX', 'AWFI', 'PAN5M',
                                              'PAN10M']),
               default='MUX',
@@ -82,12 +78,17 @@ FONT = ImageFont.load_default()
 @click.option('--taboo_index', type=str, default=None,
               help='List of comma separated integers with image indices that '
               'will not be included in the timelapse')
-def main(lat, lon, path, row, sensor, level,
+@click.option('--stac_endpoint', '-s', type=str,
+              default='https://4jp7f1hqlj.execute-api.us-east-1.amazonaws.com/'\
+              'prod/stac/search',
+              help='STAC search endpoint')
+def main(lat, lon,
+         sensor, level,
          start_date, end_date, buffer_size, res, bands,
          output, saveintermediary, max_images, singleenhancement,
          enhancement, percentiles, contrast_factor, brightness_factor,
          duration,
-         taboo_index):
+         taboo_index, stac_endpoint):
     """ Create animated GIF from CBERS 4 data"""
 
     rgb = bands.split(',')
@@ -103,10 +104,13 @@ def main(lat, lon, path, row, sensor, level,
         for item in taboo_index.split(','):
             taboo_list.append(int(item))
 
-    scenes = utils.search(sensor=sensor, path=path, row=row,
+    scenes = utils.search(sensor=sensor,
+                          mode='stac',
+                          lon=lon, lat=lat,
                           level=None if level == 'all' else level,
                           start_date=start_date,
-                          end_date=end_date)
+                          end_date=end_date,
+                          stac_endpoint=stac_endpoint)
     click.echo('{} scenes found'.format(len(scenes)))
 
     # Output transform
