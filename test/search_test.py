@@ -2,10 +2,8 @@
 
 import unittest
 from cbersgif.search import StacSearch
-from cbersgif.utils import lonlat_to_geojson, feat_to_bounds
 
-STAC_ENDPOINT = 'https://4jp7f1hqlj.execute-api.us-east-1.amazonaws.com/'\
-                'prod/stac/search'
+STAC_ENDPOINT = 'https://stac.amskepler.com/v07/stac/search'
 
 class SearchTest(unittest.TestCase):
     """SearchTest"""

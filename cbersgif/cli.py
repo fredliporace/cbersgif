@@ -79,8 +79,7 @@ FONT = ImageFont.load_default()
               help='List of comma separated integers with image indices that '
               'will not be included in the timelapse')
 @click.option('--stac_endpoint', '-s', type=str,
-              default='https://4jp7f1hqlj.execute-api.us-east-1.amazonaws.com/'\
-              'prod/stac/search',
+              default='https://stac.amskepler.com/v07/stac/search',
               help='STAC search endpoint')
 def main(lat, lon,
          sensor, level,
@@ -195,4 +194,4 @@ def main(lat, lon,
         utils.save_animated_gif(output, images, duration=duration)
 
 if __name__ == '__main__':
-    main()
+    main() # pylint: disable=no-value-for-parameter

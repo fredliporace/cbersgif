@@ -25,10 +25,6 @@ class Search: # pylint: disable=too-few-public-methods
 class StacSearch(Search):
     """Stac search utilities"""
 
-    def __init__(self, search_url):
-        """Constructor"""
-        super(StacSearch, self).__init__(search_url)
-
     def search(self, instrument: str,
                start_date: str, end_date: str,
                bbox: list,
@@ -48,12 +44,16 @@ class StacSearch(Search):
             "time": "{sd}T00:00:00Z/"\
             "{ed}T12:31:12Z".format(sd=start_date, ed=end_date),
             "query": {
-                "eo:instrument": instrument
+                "eo:instrument":{
+                    "eq":instrument
+                }
             }
         }
 
-        params['query'].update({} if level is None \
-                               else {"cbers:data_type":level})
+        if level:
+            params['query']['cbers:data_type'] = {"eq":level}
+        # params['query'].update({} if level is None \
+        #                        else {"cbers:data_type":level})
 
         req = requests.post(self.search_url,
                             json=params,

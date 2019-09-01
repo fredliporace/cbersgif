@@ -7,12 +7,11 @@ import os
 
 from PIL import Image
 
-STAC_ENDPOINT = 'https://4jp7f1hqlj.execute-api.us-east-1.amazonaws.com/'\
-                'prod/stac/search'
-
 from cbersgif.utils import search, lonlat_to_geojson, \
     feat_to_bounds, save_animated_gif, frame_hash, \
     stac_to_aws_sat_api
+
+STAC_ENDPOINT = 'https://stac.amskepler.com/v07/stac/search'
 
 def diff_files(filename1, filename2):
     """
