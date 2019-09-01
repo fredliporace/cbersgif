@@ -78,7 +78,7 @@ FONT = ImageFont.load_default()
 @click.option('--taboo_index', type=str, default=None,
               help='List of comma separated integers with image indices that '
               'will not be included in the timelapse')
-@click.option('--stac_endpoint', '-s', type=str,
+@click.option('--stac_endpoint', '-s', type=str, # pylint: disable=too-many-locals,too-many-arguments
               default='https://stac.amskepler.com/v07/stac/search',
               help='STAC search endpoint')
 def main(lat, lon,
@@ -168,7 +168,9 @@ def main(lat, lon,
                                                  out_range=[1, 255]),
                                   0)
 
-            out[band_no] = matrix.astype(np.uint8)
+            #import pdb; pdb.set_trace()
+            #out[band_no] = 255.0 * (matrix - np.min(matrix)) / np.ptp(matrix)
+            out[band_no] = 1.0 * matrix
 
         img = Image.fromarray(np.dstack(out))
 
