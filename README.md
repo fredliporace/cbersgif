@@ -10,12 +10,12 @@ The animation typically needs to be generated in at least two passes, the first
 pass is used to visualize all available images and filter out a set of undesired
 images from the final animation.
 
-The command below for instance shows all available MUX images from 2013-01-01 to 2019-03-04 covering coordinate (lon, lat) = (56.01551, -12.8379). The images are cropped in a bounding box centered on the coordinate; width height of 20 km and 80m resolution. Each frame in the ```mux_first_pass.gif``` file has a
+The command below for instance shows all available MUX images from 2013-01-01 to 2019-03-04 covering coordinate (lon, lat) = (-56.01551, -12.8379). The images are cropped in a bounding box centered on the coordinate; width height of 20 km and 80m resolution. Each frame in the ```mux_first_pass.gif``` file has a
 duration of 0.5s in the animation. Only L4 (ortho) images are selected.
 For details on the other options use the --help option.
 
 ```
-./cbersgif/cli.py --lat -12.8379 --lon -56.01551 --sensor MUX --start_date 2013-01-01 -end_date 2019-03-04 --max_images 50 --enhancement --buffer_size=20000 --res=80 --duration=0.5 --output=mux_first_pass.gif
+./cbersgif/cli.py --lat -12.8379 --lon -56.01551 --sensor MUX --start_date 2013-01-01 --end_date 2019-03-04 --max_images 50 --enhancement --buffer_size=20000 --res=80 --duration=0.5 --output=mux_first_pass.gif
 ```
 
 Once this first gif is generated we may filter out undesired scenes by
