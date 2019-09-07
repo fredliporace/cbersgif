@@ -37,7 +37,7 @@ def stac_to_aws_sat_api(stac_id: str):
     :param stac_id str: stac item id
     :rtype: dict
     :return: aws_sat_api scene id, required keys: key, acquisition_date,
-             scene_id             
+             scene_id
 
     """
 
@@ -116,7 +116,13 @@ def search(**kwargs):
             matches.append(stac_to_aws_sat_api(stac_id=sid['id']))
         matches = sorted(matches, key=lambda k: k['acquisition_date'])
 
-    return matches
+    # Remove duplicate acquisition dates
+    seen = set()
+    seen_add = seen.add
+    filtered_matches = [x for x in matches if not (x['acquisition_date'] in seen \
+                                                   or seen_add(x['acquisition_date']))]
+
+    return filtered_matches
 
 def lonlat_to_geojson(lon, lat, buff_size=None):
     '''

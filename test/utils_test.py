@@ -76,8 +76,8 @@ class UtilsTest(unittest.TestCase):
                          'CBERS4/MUX/151/126/CBERS_4_MUX_20150215_151_126_L2')
         self.assertEqual(result[0]['acquisition_date'], '20150215')
 
-    def search_stac_mode(self):
-        """search_test_with_date"""
+    def search_date_test(self):
+        """search_date_test"""
 
         result = search(sensor='MUX', path=100, row=100)
         self.assertTrue(len(result) >= 4)
@@ -87,6 +87,22 @@ class UtilsTest(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0]['acquisition_date'], '20180306')
         self.assertEqual(result[1]['acquisition_date'], '20180427')
+
+
+    def search_remove_dupes_test(self):
+        """search_remove_dupes_test"""
+
+        lon = -53.3175
+        lat = -6.40133
+        result = search(sensor='AWFI',
+                        lon=lon, lat=lat,
+                        mode='stac', stac_endpoint=STAC_ENDPOINT,
+                        start_date='2015-11-01',
+                        end_date='2015-12-31',
+                        level='L4')
+        for index in range(0, len(result)-1):
+            self.assertNotEqual(result[index]['acquisition_date'],
+                                result[index+1]['acquisition_date'])
 
 
     def lonlat_to_geojson_test(self):
