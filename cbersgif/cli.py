@@ -147,7 +147,9 @@ def main(lat, lon,
             matrix = utils.get_frame_matrix(s3_key, band, scene, aoi_bounds,
                                             width, height)
 
-            if (scene_no == 0 or not singleenhancement) and enhancement:
+            # Compute histogram stretch parameters. If singleenhancement
+            # is defined then only the first image is used.
+            if (not images or not singleenhancement) and enhancement:
                 p_min_value[band_no], \
                     p_max_value[band_no] = np.\
                                            percentile(matrix[matrix > 0],
