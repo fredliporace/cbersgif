@@ -25,10 +25,6 @@ class Search: # pylint: disable=too-few-public-methods
 class StacSearch(Search):
     """Stac search utilities"""
 
-    def __init__(self, search_url):
-        """Constructor"""
-        super(StacSearch, self).__init__(search_url)
-
     def search(self, instrument: str,
                start_date: str, end_date: str,
                bbox: list,
@@ -45,15 +41,21 @@ class StacSearch(Search):
         params = {
             "limit": limit,
             "bbox": bbox,
-            "time": "{sd}T00:00:00Z/"\
+            "datetime": "{sd}T00:00:00Z/"\
             "{ed}T12:31:12Z".format(sd=start_date, ed=end_date),
-            "query": {
-                "eo:instrument": instrument
-            }
+            # "query": {
+            #     "eo:instrument":{
+            #         "eq":instrument
+            #     }
+            # }
+            "collections": [f"CBERS4-{instrument}"]
         }
 
-        params['query'].update({} if level is None \
-                               else {"cbers:data_type":level})
+        if level:
+            params["query"] = dict()
+            params['query']['cbers:data_type'] = {"eq":level}
+        # params['query'].update({} if level is None \
+        #                        else {"cbers:data_type":level})
 
         req = requests.post(self.search_url,
                             json=params,
@@ -62,6 +64,8 @@ class StacSearch(Search):
         if req.status_code is not requests.codes.ok: # pylint: disable=no-member
             raise RuntimeError("Service returned %d code, msg: %s" %
                                (req.status_code, req.text))
+
+        #import pdb; pdb.set_trace()
 
         res = []
         #import pdb; pdb.set_trace()

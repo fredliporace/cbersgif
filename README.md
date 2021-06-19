@@ -15,7 +15,7 @@ duration of 0.5s in the animation. Only L4 (ortho) images are selected.
 For details on the other options use the --help option.
 
 ```
-./cbersgif/cli.py --lat -12.8379 --lon -56.01551 --sensor MUX --start_date 2013-01-01 --end_date 2019-03-04 --max_images 50 --enhancement --buffer_size=20000 --res=80 --duration=0.5 --output=mux_first_pass.gif
+cbersgif --lat -12.8379 --lon -56.01551 --sensor MUX --start_date 2013-01-01 --end_date 2019-03-04 --max_images 50 --enhancement --buffer_size=20000 --res=80 --duration=0.5 --output=mux_first_pass.gif
 ```
 
 Once this first gif is generated we may filter out undesired scenes by
@@ -24,7 +24,7 @@ is shown for each frame in the animated gif. Frames are cached by default so
 this second run is much faster than the first one.
 
 ```
-./cbersgif/cli.py --lat -12.8379 --lon -56.01551 --sensor MUX --start_date 2013-01-01 --end_date 2019-03-04 --max_images 50 --enhancement --buffer_size=20000 --res=80 --duration=0.5 --output=mux_second_pass.gif --taboo_index=3,4,5,6,9,11,20,22,26
+cbersgif --lat -12.8379 --lon -56.01551 --sensor MUX --start_date 2013-01-01 --end_date 2019-03-04 --max_images 50 --enhancement --buffer_size=20000 --res=80 --duration=0.5 --output=mux_second_pass.gif --taboo_index=3,4,5,6,9,11,20,22,26
 ```
 
 The second pass results is:
@@ -37,7 +37,7 @@ The following example uses coordinates from one of INPE's monitoring
 programs.
 
 ```
-./cbersgif/cli.py --lat -7.425944444444445 --lon -45.03827777777778 --sensor MUX --max_images 50 --buffer_size=4000 --res=20 --duration=0.5 --enhancement --start_date='2017-01-01' --taboo_index=9
+cbersgif --lat -7.425944444444445 --lon -45.03827777777778 --sensor MUX --max_images 50 --buffer_size=4000 --res=20 --duration=0.5 --enhancement --start_date='2017-01-01' --taboo_index=9
 ```
 
 Results in:
@@ -46,7 +46,7 @@ Results in:
 
 ## Installation
 
-Tested with python 3.6.5
+Tested with python 3.7.9
 
 ```
 pip install -r requirements.txt

@@ -18,7 +18,7 @@ import numpy as np
 
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
-from cbersgif import utils
+from cbersgif.utils import search
 
 from cbersgif import __version__ as cbersgif_version
 
@@ -78,9 +78,8 @@ FONT = ImageFont.load_default()
 @click.option('--taboo_index', type=str, default=None,
               help='List of comma separated integers with image indices that '
               'will not be included in the timelapse')
-@click.option('--stac_endpoint', '-s', type=str,
-              default='https://4jp7f1hqlj.execute-api.us-east-1.amazonaws.com/'\
-              'prod/stac/search',
+@click.option('--stac_endpoint', '-s', type=str, # pylint: disable=too-many-locals,too-many-arguments
+              default='https://stac.amskepler.com/v100/search',
               help='STAC search endpoint')
 def main(lat, lon,
          sensor, level,
@@ -148,7 +147,9 @@ def main(lat, lon,
             matrix = utils.get_frame_matrix(s3_key, band, scene, aoi_bounds,
                                             width, height)
 
-            if (scene_no == 0 or not singleenhancement) and enhancement:
+            # Compute histogram stretch parameters. If singleenhancement
+            # is defined then only the first image is used.
+            if (not images or not singleenhancement) and enhancement:
                 p_min_value[band_no], \
                     p_max_value[band_no] = np.\
                                            percentile(matrix[matrix > 0],
@@ -169,7 +170,9 @@ def main(lat, lon,
                                                  out_range=[1, 255]),
                                   0)
 
-            out[band_no] = matrix.astype(np.uint8)
+            #import pdb; pdb.set_trace()
+            #out[band_no] = 255.0 * (matrix - np.min(matrix)) / np.ptp(matrix)
+            out[band_no] = 1.0 * matrix
 
         img = Image.fromarray(np.dstack(out))
 
@@ -195,4 +198,4 @@ def main(lat, lon,
         utils.save_animated_gif(output, images, duration=duration)
 
 if __name__ == '__main__':
-    main()
+    main() # pylint: disable=no-value-for-parameter
