@@ -18,7 +18,7 @@ import numpy as np
 
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 
-from cbersgif import utils
+from cbersgif.utils import search
 
 from cbersgif import __version__ as cbersgif_version
 
