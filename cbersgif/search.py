@@ -41,16 +41,18 @@ class StacSearch(Search):
         params = {
             "limit": limit,
             "bbox": bbox,
-            "time": "{sd}T00:00:00Z/"\
+            "datetime": "{sd}T00:00:00Z/"\
             "{ed}T12:31:12Z".format(sd=start_date, ed=end_date),
-            "query": {
-                "eo:instrument":{
-                    "eq":instrument
-                }
-            }
+            # "query": {
+            #     "eo:instrument":{
+            #         "eq":instrument
+            #     }
+            # }
+            "collections": [f"CBERS4-{instrument}"]
         }
 
         if level:
+            params["query"] = dict()
             params['query']['cbers:data_type'] = {"eq":level}
         # params['query'].update({} if level is None \
         #                        else {"cbers:data_type":level})
@@ -62,6 +64,8 @@ class StacSearch(Search):
         if req.status_code is not requests.codes.ok: # pylint: disable=no-member
             raise RuntimeError("Service returned %d code, msg: %s" %
                                (req.status_code, req.text))
+
+        #import pdb; pdb.set_trace()
 
         res = []
         #import pdb; pdb.set_trace()
