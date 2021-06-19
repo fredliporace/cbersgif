@@ -79,7 +79,7 @@ FONT = ImageFont.load_default()
               help='List of comma separated integers with image indices that '
               'will not be included in the timelapse')
 @click.option('--stac_endpoint', '-s', type=str, # pylint: disable=too-many-locals,too-many-arguments
-              default='https://stac.amskepler.com/v07/stac/search',
+              default='https://stac.amskepler.com/v100/search',
               help='STAC search endpoint')
 def main(lat, lon,
          sensor, level,
