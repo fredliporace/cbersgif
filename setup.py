@@ -18,11 +18,9 @@ inst_reqs = [
 ]
 
 extra_reqs = {
-    "dev": ["pytest", "pytest-cov", "tox", "pylint", "pre-commit"],
-    "test": [
-        "pytest"
-    ],
-    #"deploy": [],
+    "dev": ["pytest", "pytest-cov", "tox", "pylint", "pre-commit", "pydocstyle"],
+    "test": ["pytest"],
+    # "deploy": [],
 }
 
 setup(
@@ -38,7 +36,7 @@ setup(
     packages=find_packages(exclude=["tests*"]),
     entry_points="""
     [console_scripts]
-    cbersgif=cbersgif.cli.cbersgif:main
+    cbersgif=cbersgif.cli:main
 """,
     zip_safe=False,
     install_requires=inst_reqs,

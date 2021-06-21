@@ -61,3 +61,18 @@ Requires setting the AWS_REQUESTER_PAYER env var to be set:
 ```
 AWS_REQUEST_PAYER=requester
 ```
+
+
+## Development environment
+
+After cloning the repository you are required to execute the following steps.
+
+Install the package with *edit* mode:
+```bash
+$ pip install -e .[dev,test]
+```
+
+Install `pre-commit` to run *isort*, *pylint*, *pydocstring*, *black* ("uncompromising Python code formatter") and *mypy* when committing new code.
+```bash
+$ pre-commit install
+```
